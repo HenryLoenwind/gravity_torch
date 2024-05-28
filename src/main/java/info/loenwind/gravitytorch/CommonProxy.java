@@ -4,24 +4,32 @@ import cpw.mods.fml.common.event.FMLInitializationEvent;
 import cpw.mods.fml.common.event.FMLPostInitializationEvent;
 import cpw.mods.fml.common.event.FMLPreInitializationEvent;
 import cpw.mods.fml.common.event.FMLServerStartingEvent;
+import cpw.mods.fml.common.registry.GameRegistry;
+import info.loenwind.gravitytorch.block.BlockGravityTorch;
+import net.minecraft.block.Block;
+import net.minecraft.init.Blocks;
+import net.minecraft.item.ItemBlock;
+import net.minecraftforge.oredict.ShapedOreRecipe;
 
 public class CommonProxy {
 
-    // preInit "Run before anything else. Read your config, create blocks, items, etc, and register them with the
-    // GameRegistry." (Remove if not needed)
-    public void preInit(FMLPreInitializationEvent event) {
-        Config.synchronizeConfiguration(event.getSuggestedConfigurationFile());
+  public static Block blockGravityTorch;
 
-        MyMod.LOG.info(Config.greeting);
-        MyMod.LOG.info("I am MyMod at version " + Tags.VERSION);
-    }
+  public void preInit(FMLPreInitializationEvent event) {
+    Config.synchronizeConfiguration(event.getSuggestedConfigurationFile());
 
-    // load "Do your mod setup. Build whatever data structures you care about. Register recipes." (Remove if not needed)
-    public void init(FMLInitializationEvent event) {}
+    blockGravityTorch = new BlockGravityTorch();
+    GameRegistry.registerBlock(blockGravityTorch, ItemBlock.class, "gravity_torch");
+  }
 
-    // postInit "Handle interaction with other mods, complete your setup based on this." (Remove if not needed)
-    public void postInit(FMLPostInitializationEvent event) {}
+  public void init(FMLInitializationEvent event) {
+    GameRegistry.addRecipe(new ShapedOreRecipe(blockGravityTorch, "t", "c", 't', Blocks.torch, 'c', "cobblestone"));
+  }
 
-    // register server commands in this event handler (Remove if not needed)
-    public void serverStarting(FMLServerStartingEvent event) {}
+  public void postInit(FMLPostInitializationEvent event) {
+  }
+
+  public void serverStarting(FMLServerStartingEvent event) {
+  }
+
 }
