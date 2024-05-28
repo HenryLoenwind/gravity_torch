@@ -3,7 +3,7 @@
 	"modList": [{
 		"modid": "${modId}",
 		"name": "${modName}",
-		"description": "Adds a simple toch varient that obeys gravity instead of breaking.",
+		"description": "Adds a simple torch variant that obeys gravity instead of breaking.",
 		"version": "${modVersion}",
 		"mcversion": "${minecraftVersion}",
 		"url": "",
