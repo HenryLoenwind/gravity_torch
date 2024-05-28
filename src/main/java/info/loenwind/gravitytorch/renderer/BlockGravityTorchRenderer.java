@@ -12,6 +12,7 @@ import com.enderio.core.common.util.BlockCoord;
 import cpw.mods.fml.client.registry.ISimpleBlockRenderingHandler;
 import info.loenwind.gravitytorch.CommonProxy;
 import info.loenwind.gravitytorch.block.BlockGravityTorch;
+import info.loenwind.gravitytorch.config.Config;
 import info.loenwind.gravitytorch.render.CachableRenderStatement;
 import info.loenwind.gravitytorch.render.CacheRenderer;
 import info.loenwind.gravitytorch.render.FaceRenderer;
@@ -77,7 +78,7 @@ public class BlockGravityTorchRenderer implements ISimpleBlockRenderingHandler, 
       FaceRenderer.renderCube(bb_base, renderer.overrideBlockTexture, null, null, false);
       FaceRenderer.clearLightingReference();
     } else {
-      new RenderingContext(world, new BlockCoord(x, y, z)).execute(csr);
+      new RenderingContext(world, new BlockCoord(x, y, z)).execute(csr, Config.directDrawingWorld);
     }
     Tessellator.instance.addTranslation(-x, -y, -z);
 
@@ -99,17 +100,11 @@ public class BlockGravityTorchRenderer implements ISimpleBlockRenderingHandler, 
     setup();
 
     Tessellator.instance.addTranslation(-.5f, -.5f, -.5f);
-    new RenderingContext(world, new BlockCoord(x, y, z)).execute(csr);
+    new RenderingContext(world, new BlockCoord(x, y, z)).execute(csr, Config.directDrawingEntity);
     Tessellator.instance.addTranslation(.5f, .5f, .5f); // not actually needed, our caller does glPopMatrix() next. Just
                                                         // be on the safe side in case some mod takes over rendering...
 
     return true;
-  }
-
-  public static void renderBlock(boolean active) {
-    setup();
-    new RenderingContext().execute(csr);
-    return;
   }
 
   @Override
@@ -139,27 +134,30 @@ public class BlockGravityTorchRenderer implements ISimpleBlockRenderingHandler, 
 
   @Override
   public void renderItem(ItemRenderType type, ItemStack item, Object... data) {
-//    Tessellator.instance.startDrawingQuads();
+    setup();
+
     GL11.glPushMatrix();
     float scale = 2.5f;
     float xTrans = -0.5f;
     float yTrans = 0;
     float zTrans = -0.5f;
+    boolean directDrawing = Config.directDrawingEntity;
     if (type == ItemRenderType.INVENTORY) {
       yTrans = -0.35f;
       scale = 1.8f;
+      directDrawing = Config.directDrawingInventory;
     } else if (type == ItemRenderType.EQUIPPED || type == ItemRenderType.EQUIPPED_FIRST_PERSON) {
       scale = 1.8f;
       yTrans = 0f;
       zTrans = -0.25f;
       xTrans = -0.25f;
+      directDrawing = Config.directDrawingHand;
     }
     GL11.glScalef(scale, scale, scale);
     GL11.glTranslatef(xTrans, yTrans, zTrans);
     RenderUtil.bindBlockTexture();
-    renderWorldBlock(null, 0, 0, 0, CommonProxy.blockGravityTorch, getRenderId(), (RenderBlocks) data[0]);
+    new RenderingContext(null, null).execute(csr, directDrawing);
 
-//    Tessellator.instance.draw();
     GL11.glPopMatrix();
 
   }

@@ -6,6 +6,7 @@ import cpw.mods.fml.common.event.FMLPreInitializationEvent;
 import cpw.mods.fml.common.event.FMLServerStartingEvent;
 import cpw.mods.fml.common.registry.GameRegistry;
 import info.loenwind.gravitytorch.block.BlockGravityTorch;
+import info.loenwind.gravitytorch.config.Config;
 import net.minecraft.block.Block;
 import net.minecraft.init.Blocks;
 import net.minecraft.item.ItemBlock;

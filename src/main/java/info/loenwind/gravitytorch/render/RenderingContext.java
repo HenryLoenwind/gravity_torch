@@ -104,8 +104,8 @@ public class RenderingContext {
     return 0;
   }
 
-  public void execute(List<CachableRenderStatement> csr) {
-    if (!derpedTess /* && Config.directDrawingEnabled.getBoolean() */ && glErrorCount != -1) {
+  public void execute(List<CachableRenderStatement> csr, boolean directDrawingEnabled) {
+    if (!derpedTess && directDrawingEnabled && glErrorCount != -1) {
       if (tessIsDrawing) {
         if (vertexCount == 0) {
           Tessellator.instance.addVertex(0, 0, 0);
