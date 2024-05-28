@@ -14,7 +14,7 @@ import net.minecraft.world.World;
 @Mixin(RenderBlocks.class)
 public abstract class IntoRenderBlocks {
 
-  @Inject(method = "renderBlockSandFalling", at = @At("HEAD"), cancellable = true, require = 1)
+  @Inject(method = "renderBlockSandFalling", at = @At("HEAD"), cancellable = true)
   public void onRenderBlockSandFalling(Block block, World world, int x, int y, int z, int meta, CallbackInfo ci) {
     if (block == CommonProxy.blockGravityTorch) {
       // x/y/z as lighting reference. Position (translation) is pre-set by caller to
