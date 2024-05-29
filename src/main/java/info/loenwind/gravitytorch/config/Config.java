@@ -37,13 +37,16 @@ public class Config {
   }
 
   private static void sync() {
-    configuration.getBoolean("directDrawingWorld", Configuration.CATEGORY_GENERAL, directDrawingWorld,
+    directDrawingWorld = configuration.getBoolean("directDrawingWorld", Configuration.CATEGORY_GENERAL,
+        directDrawingWorld,
         "Enable direct OpenGL drawing for the block in the world? Disable if the block is invisible.");
-    configuration.getBoolean("directDrawingInventory", Configuration.CATEGORY_GENERAL, directDrawingInventory,
+    directDrawingInventory = configuration.getBoolean("directDrawingInventory", Configuration.CATEGORY_GENERAL,
+        directDrawingInventory,
         "Enable direct OpenGL drawing for the item in the inventory? Disable if the item is invisible.");
-    configuration.getBoolean("directDrawingEntity", Configuration.CATEGORY_GENERAL, directDrawingEntity,
+    directDrawingEntity = configuration.getBoolean("directDrawingEntity", Configuration.CATEGORY_GENERAL,
+        directDrawingEntity,
         "Enable direct OpenGL drawing for the falling block? Disable if the falling block entity is invisible.");
-    configuration.getBoolean("directDrawingHand", Configuration.CATEGORY_GENERAL, directDrawingHand,
+    directDrawingHand = configuration.getBoolean("directDrawingHand", Configuration.CATEGORY_GENERAL, directDrawingHand,
         "Enable direct OpenGL drawing for the item in the hand? Disable if the item is invisible.");
 
     if (configuration.hasChanged()) {
