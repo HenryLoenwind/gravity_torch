@@ -32,14 +32,21 @@ public class RenderingContext {
   public final int[] mixedLight = new int[ForgeDirection.values().length];
   public final boolean hasLight;
 
+  public final Tessellator tess;
+
   public RenderingContext() {
     hasLight = false;
     xOffset = yOffset = zOffset = 0;
     tessIsDrawing = false;
     vertexCount = 0;
+    tess = Tessellator.instance;
   }
 
   public RenderingContext(IBlockAccess world, BlockCoord bc) {
+    this(world, bc, Tessellator.instance);
+  }
+
+  public RenderingContext(IBlockAccess world, BlockCoord bc, Tessellator tess) {
     if (world != null && bc != null) {
       hasLight = true;
       for (ForgeDirection dir : ForgeDirection.VALID_DIRECTIONS) {
@@ -57,6 +64,7 @@ public class RenderingContext {
       hasLight = false;
     }
 
+    this.tess = tess;
     setupTessellatorFields();
     xOffset = getDouble(xOffset_field);
     yOffset = getDouble(yOffset_field);
@@ -65,10 +73,10 @@ public class RenderingContext {
     tessIsDrawing = getBoolean(tessIsDrawing_field);
   }
 
-  private static double getDouble(Field field) {
+  private double getDouble(Field field) {
     if (!derpedTess) {
       try {
-        return field.getDouble(Tessellator.instance);
+        return field.getDouble(tess);
       } catch (IllegalArgumentException | IllegalAccessException e) {
         GravityTorch.LOG.warn(
             "Some mod has replaced Minecraft's tesselator. Help, without that one I don't now where to render!\n" + e);
@@ -78,10 +86,10 @@ public class RenderingContext {
     return 0;
   }
 
-  private static boolean getBoolean(Field field) {
+  private boolean getBoolean(Field field) {
     if (!derpedTess) {
       try {
-        return field.getBoolean(Tessellator.instance);
+        return field.getBoolean(tess);
       } catch (IllegalArgumentException | IllegalAccessException e) {
         GravityTorch.LOG.warn(
             "Some mod has replaced Minecraft's tesselator. Help, without that one I don't now where to render!\n" + e);
@@ -91,10 +99,10 @@ public class RenderingContext {
     return false;
   }
 
-  private static int getInt(Field field) {
+  private int getInt(Field field) {
     if (!derpedTess) {
       try {
-        return field.getInt(Tessellator.instance);
+        return field.getInt(tess);
       } catch (IllegalArgumentException | IllegalAccessException e) {
         GravityTorch.LOG.warn(
             "Some mod has replaced Minecraft's tesselator. Help, without that one I don't now where to render!\n" + e);
@@ -108,12 +116,12 @@ public class RenderingContext {
     if (!derpedTess && directDrawingEnabled && glErrorCount != -1) {
       if (tessIsDrawing) {
         if (vertexCount == 0) {
-          Tessellator.instance.addVertex(0, 0, 0);
-          Tessellator.instance.addVertex(0, 0, 0);
-          Tessellator.instance.addVertex(0, 0, 0);
-          Tessellator.instance.addVertex(0, 0, 0);
+          tess.addVertex(0, 0, 0);
+          tess.addVertex(0, 0, 0);
+          tess.addVertex(0, 0, 0);
+          tess.addVertex(0, 0, 0);
         }
-        Tessellator.instance.draw();
+        tess.draw();
       }
       clearGLerrors();
       for (CachableRenderStatement statement : csr) {
@@ -129,11 +137,11 @@ public class RenderingContext {
             "Disabled direct drawing after too many OpenGL errors. If you got rendering errors, you can disabled direct drawing completely in the mod options for Ender IO Addons."));
       }
       if (tessIsDrawing) {
-        Tessellator.instance.startDrawingQuads();
-        Tessellator.instance.addVertex(0, 0, 0);
-        Tessellator.instance.addVertex(0, 0, 0);
-        Tessellator.instance.addVertex(0, 0, 0);
-        Tessellator.instance.addVertex(0, 0, 0);
+        tess.startDrawingQuads();
+        tess.addVertex(0, 0, 0);
+        tess.addVertex(0, 0, 0);
+        tess.addVertex(0, 0, 0);
+        tess.addVertex(0, 0, 0);
       }
     } else {
       execute_tesselated(csr);
@@ -142,13 +150,13 @@ public class RenderingContext {
 
   public void execute_tesselated(List<CachableRenderStatement> csr) {
     if (!tessIsDrawing) {
-      Tessellator.instance.startDrawingQuads();
+      tess.startDrawingQuads();
     }
     for (CachableRenderStatement statement : csr) {
       statement.execute_tesselated(this);
     }
     if (!tessIsDrawing) {
-      Tessellator.instance.draw();
+      tess.draw();
     }
   }
 

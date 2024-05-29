@@ -10,6 +10,7 @@ import com.enderio.core.client.render.VertexTranslation;
 import com.enderio.core.common.util.BlockCoord;
 
 import cpw.mods.fml.client.registry.ISimpleBlockRenderingHandler;
+import cpw.mods.fml.common.eventhandler.SubscribeEvent;
 import info.loenwind.gravitytorch.CommonProxy;
 import info.loenwind.gravitytorch.block.BlockGravityTorch;
 import info.loenwind.gravitytorch.config.Config;
@@ -25,6 +26,8 @@ import net.minecraft.item.ItemStack;
 import net.minecraft.util.IIcon;
 import net.minecraft.world.IBlockAccess;
 import net.minecraftforge.client.IItemRenderer;
+import net.minecraftforge.client.event.TextureStitchEvent;
+import net.minecraftforge.common.MinecraftForge;
 import net.minecraftforge.common.util.ForgeDirection;
 
 public class BlockGravityTorchRenderer implements ISimpleBlockRenderingHandler, IItemRenderer {
@@ -66,21 +69,34 @@ public class BlockGravityTorchRenderer implements ISimpleBlockRenderingHandler, 
     }
   }
 
+  @SubscribeEvent
+  public void onTextureReload(TextureStitchEvent.Post event) {
+    csr = null;
+  }
+
+  public BlockGravityTorchRenderer() {
+    MinecraftForge.EVENT_BUS.register(this);
+  }
+
   @Override
   public boolean renderWorldBlock(IBlockAccess world, int x, int y, int z, Block block, int modelId,
       RenderBlocks renderer) {
     setup();
 
-    Tessellator.instance.addTranslation(x, y, z);
     if (renderer.overrideBlockTexture != null) {
+      Tessellator.instance.addTranslation(x, y, z);
       FaceRenderer.setLightingReference(world, CommonProxy.blockGravityTorch, x, y, z);
       FaceRenderer.renderCube(bb_stem, renderer.overrideBlockTexture, xform_stem, null, false);
       FaceRenderer.renderCube(bb_base, renderer.overrideBlockTexture, null, null, false);
       FaceRenderer.clearLightingReference();
+      Tessellator.instance.addTranslation(-x, -y, -z);
     } else {
-      new RenderingContext(world, new BlockCoord(x, y, z)).execute(csr, Config.directDrawingWorld);
+      Tessellator tess = Tessellator.instance;
+      tess.addTranslation(x, y, z);
+      final RenderingContext renderingContext = new RenderingContext(world, new BlockCoord(x, y, z), tess);
+      renderingContext.execute(csr, Config.directDrawingWorld);
+      tess.addTranslation(-x, -y, -z);
     }
-    Tessellator.instance.addTranslation(-x, -y, -z);
 
     return true;
   }
@@ -99,10 +115,12 @@ public class BlockGravityTorchRenderer implements ISimpleBlockRenderingHandler, 
   public boolean renderFallingBlock(IBlockAccess world, int x, int y, int z, RenderBlocks renderer) {
     setup();
 
-    Tessellator.instance.addTranslation(-.5f, -.5f, -.5f);
-    new RenderingContext(world, new BlockCoord(x, y, z)).execute(csr, Config.directDrawingEntity);
-    Tessellator.instance.addTranslation(.5f, .5f, .5f); // not actually needed, our caller does glPopMatrix() next. Just
-                                                        // be on the safe side in case some mod takes over rendering...
+    Tessellator tess = Tessellator.instance;
+    tess.addTranslation(-.5f, -.5f, -.5f);
+    final RenderingContext renderingContext = new RenderingContext(world, new BlockCoord(x, y, z), tess);
+    renderingContext.execute(csr, Config.directDrawingEntity);
+    tess.addTranslation(.5f, .5f, .5f); // not actually needed, our caller does glPopMatrix() next. Just be on the safe
+                                        // side in case some mod takes over rendering...
 
     return true;
   }

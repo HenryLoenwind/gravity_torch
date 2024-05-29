@@ -13,7 +13,6 @@ import com.enderio.core.common.vecmath.Vector3d;
 
 import net.minecraft.client.Minecraft;
 import net.minecraft.client.renderer.OpenGlHelper;
-import net.minecraft.client.renderer.Tessellator;
 import net.minecraft.util.IIcon;
 import net.minecraftforge.common.util.ForgeDirection;
 
@@ -138,18 +137,18 @@ public class CacheRenderer {
       csr.add(new CRS_Lightmap(aa_normal));
     }
 
-    byte color_TL, color_TR, color_BL, color_BR;
+    int color_TL, color_TR, color_BL, color_BR;
 
     if (brightnessPerSide != null) {
-      color_TL = (byte) (brightnessPerSide[aa_normal.ordinal()] * brightness_TL * 255);
-      color_TR = (byte) (brightnessPerSide[aa_normal.ordinal()] * brightness_TR * 255);
-      color_BL = (byte) (brightnessPerSide[aa_normal.ordinal()] * brightness_BL * 255);
-      color_BR = (byte) (brightnessPerSide[aa_normal.ordinal()] * brightness_BR * 255);
+      color_TL = (int) (brightnessPerSide[aa_normal.ordinal()] * brightness_TL * 255);
+      color_TR = (int) (brightnessPerSide[aa_normal.ordinal()] * brightness_TR * 255);
+      color_BL = (int) (brightnessPerSide[aa_normal.ordinal()] * brightness_BL * 255);
+      color_BR = (int) (brightnessPerSide[aa_normal.ordinal()] * brightness_BR * 255);
     } else {
-      color_TL = (byte) (brightness_TL * 255);
-      color_TR = (byte) (brightness_TR * 255);
-      color_BL = (byte) (brightness_BL * 255);
-      color_BR = (byte) (brightness_BR * 255);
+      color_TL = (int) (brightness_TL * 255);
+      color_TR = (int) (brightness_TR * 255);
+      color_BL = (int) (brightness_BL * 255);
+      color_BR = (int) (brightness_BR * 255);
     }
 
     if (inside) {
@@ -463,7 +462,7 @@ public class CacheRenderer {
     @Override
     public void execute_tesselated(RenderingContext renderingContext) {
       if (renderingContext.hasLight) {
-        Tessellator.instance.setBrightness(renderingContext.mixedLight[normal]);
+        renderingContext.tess.setBrightness(renderingContext.mixedLight[normal]);
       }
     }
 
@@ -494,7 +493,7 @@ public class CacheRenderer {
     @Override
     public void execute_tesselated(RenderingContext renderingContext) {
       if (renderingContext.hasLight) {
-        Tessellator.instance.setBrightness(mixedBrightness);
+        renderingContext.tess.setBrightness(mixedBrightness);
       }
     }
 
@@ -530,7 +529,7 @@ public class CacheRenderer {
 
     @Override
     public void execute_tesselated(RenderingContext renderingContext) {
-      Tessellator.instance.setNormal((float) x, (float) y, (float) z);
+      renderingContext.tess.setNormal((float) x, (float) y, (float) z);
     }
 
     @Override
@@ -542,9 +541,9 @@ public class CacheRenderer {
 
   private static class CRS_Vertex implements CachableRenderStatement {
     private final double u, v, w, x, y, z;
-    private final byte color;
+    private final int color;
 
-    public CRS_Vertex(Vector3d vec, float u, float v, double w, byte color) {
+    public CRS_Vertex(Vector3d vec, float u, float v, double w, int color) {
       this.u = u * w;
       this.v = v * w;
       this.w = w;
@@ -556,15 +555,15 @@ public class CacheRenderer {
 
     @Override
     public void execute(RenderingContext renderingContext) {
-      GL11.glColor4ub(color, color, color, (byte) 255);
+      GL11.glColor4ub((byte) color, (byte) color, (byte) color, (byte) 255);
       GL11.glTexCoord4d(u, v, 0d, w);
       GL11.glVertex3d(x + renderingContext.xOffset, y + renderingContext.yOffset, z + renderingContext.zOffset);
     }
 
     @Override
     public void execute_tesselated(RenderingContext renderingContext) {
-      Tessellator.instance.func_154352_a(color, color, color);
-      Tessellator.instance.addVertexWithUV(x, y, z, u / w, v / w);
+      renderingContext.tess.setColorRGBA(color, color, color, 255);
+      renderingContext.tess.addVertexWithUV(x, y, z, u / w, v / w);
     }
 
     @Override
