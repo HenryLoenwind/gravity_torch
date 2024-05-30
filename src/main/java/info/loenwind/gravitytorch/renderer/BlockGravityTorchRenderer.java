@@ -8,8 +8,10 @@ import com.enderio.core.client.render.BoundingBox;
 import com.enderio.core.client.render.RenderUtil;
 import com.enderio.core.client.render.VertexTranslation;
 import com.enderio.core.common.util.BlockCoord;
+import com.gtnewhorizons.angelica.api.ThreadSafeISBRH;
 
 import cpw.mods.fml.client.registry.ISimpleBlockRenderingHandler;
+import cpw.mods.fml.common.Loader;
 import cpw.mods.fml.common.eventhandler.SubscribeEvent;
 import info.loenwind.gravitytorch.CommonProxy;
 import info.loenwind.gravitytorch.block.BlockGravityTorch;
@@ -30,6 +32,7 @@ import net.minecraftforge.client.event.TextureStitchEvent;
 import net.minecraftforge.common.MinecraftForge;
 import net.minecraftforge.common.util.ForgeDirection;
 
+@ThreadSafeISBRH(perThread = false)
 public class BlockGravityTorchRenderer implements ISimpleBlockRenderingHandler, IItemRenderer {
 
   private static List<CachableRenderStatement> csr;
@@ -53,10 +56,10 @@ public class BlockGravityTorchRenderer implements ISimpleBlockRenderingHandler, 
 
   private static void setup() {
     if (csr == null) {
-      IIcon[] icons_torch = RenderUtil.getBlockTextures(Blocks.torch, 0);
-      IIcon[] icons_cobble = RenderUtil.getBlockTextures(Blocks.cobblestone, 0);
+      final IIcon[] icons_torch = RenderUtil.getBlockTextures(Blocks.torch, 0);
+      final IIcon[] icons_cobble = RenderUtil.getBlockTextures(Blocks.cobblestone, 0);
 
-      CacheRenderer r = new CacheRenderer().setLighting(true).setBrightnessPerSide(FaceRenderer.stdBrightness);
+      final CacheRenderer r = new CacheRenderer().setLighting(true).setBrightnessPerSide(FaceRenderer.stdBrightness);
 
       r.setBB(bb_stem).setXform(xform_stem).addSkirt(icons_torch, false, bb_stem);
       final IIcon tex = icons_torch[ForgeDirection.UP.ordinal()];
@@ -84,16 +87,21 @@ public class BlockGravityTorchRenderer implements ISimpleBlockRenderingHandler, 
     setup();
 
     if (renderer.overrideBlockTexture != null) {
-      Tessellator.instance.addTranslation(x, y, z);
-      FaceRenderer.setLightingReference(world, CommonProxy.blockGravityTorch, x, y, z);
-      FaceRenderer.renderCube(bb_stem, renderer.overrideBlockTexture, xform_stem, null, false);
-      FaceRenderer.renderCube(bb_base, renderer.overrideBlockTexture, null, null, false);
-      FaceRenderer.clearLightingReference();
-      Tessellator.instance.addTranslation(-x, -y, -z);
+      if (!Loader.isModLoaded("angelica")) {
+        // this is not thread-safe, but it also isn't needed as this block breaks
+        // instantly
+        Tessellator.instance.addTranslation(x, y, z);
+        FaceRenderer.setLightingReference(world, CommonProxy.blockGravityTorch, x, y, z);
+        FaceRenderer.renderCube(bb_stem, renderer.overrideBlockTexture, xform_stem, null, false);
+        FaceRenderer.renderCube(bb_base, renderer.overrideBlockTexture, null, null, false);
+        FaceRenderer.clearLightingReference();
+        Tessellator.instance.addTranslation(-x, -y, -z);
+      }
     } else {
       Tessellator tess = Tessellator.instance;
       tess.addTranslation(x, y, z);
-      final RenderingContext renderingContext = new RenderingContext(world, new BlockCoord(x, y, z), tess);
+      final RenderingContext renderingContext = new RenderingContext(world, new BlockCoord(x, y, z), tess,
+          Config.directDrawingWorld);
       renderingContext.execute(csr, Config.directDrawingWorld);
       tess.addTranslation(-x, -y, -z);
     }
@@ -117,7 +125,8 @@ public class BlockGravityTorchRenderer implements ISimpleBlockRenderingHandler, 
 
     Tessellator tess = Tessellator.instance;
     tess.addTranslation(-.5f, -.5f, -.5f);
-    final RenderingContext renderingContext = new RenderingContext(world, new BlockCoord(x, y, z), tess);
+    final RenderingContext renderingContext = new RenderingContext(world, new BlockCoord(x, y, z), tess, true);
+    // ^ true so the rc will not assume the tess is already drawing
     renderingContext.execute(csr, Config.directDrawingEntity);
     tess.addTranslation(.5f, .5f, .5f); // not actually needed, our caller does glPopMatrix() next. Just be on the safe
                                         // side in case some mod takes over rendering...

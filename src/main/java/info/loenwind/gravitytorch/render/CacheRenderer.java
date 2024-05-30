@@ -137,7 +137,7 @@ public class CacheRenderer {
       csr.add(new CRS_Lightmap(aa_normal));
     }
 
-    int color_TL, color_TR, color_BL, color_BR;
+    final int color_TL, color_TR, color_BL, color_BR;
 
     if (brightnessPerSide != null) {
       color_TL = (int) (brightnessPerSide[aa_normal.ordinal()] * brightness_TL * 255);
@@ -170,16 +170,16 @@ public class CacheRenderer {
       case UP:
         csr.add(new CRS_Normal(verts[2], verts[6], verts[7]));
         csr.add(new CRS_Vertex(verts[2], maxU, minV, 1, color_TL));
-        csr.add(new CRS_Vertex(verts[6], maxU, maxV, 1, color_TL));
-        csr.add(new CRS_Vertex(verts[7], minU, maxV, 1, color_TL));
-        csr.add(new CRS_Vertex(verts[3], minU, minV, 1, color_TL));
+        csr.add(new CRS_Simple_Vertex(verts[6], maxU, maxV));
+        csr.add(new CRS_Simple_Vertex(verts[7], minU, maxV));
+        csr.add(new CRS_Simple_Vertex(verts[3], minU, minV));
         break;
       case DOWN:
         csr.add(new CRS_Normal(verts[1], verts[0], verts[4]));
         csr.add(new CRS_Vertex(verts[1], maxU, minV, 1, color_BL));
-        csr.add(new CRS_Vertex(verts[0], minU, minV, 1, color_BL));
-        csr.add(new CRS_Vertex(verts[4], minU, maxV, 1, color_BL));
-        csr.add(new CRS_Vertex(verts[5], maxU, maxV, 1, color_BL));
+        csr.add(new CRS_Simple_Vertex(verts[0], minU, minV));
+        csr.add(new CRS_Simple_Vertex(verts[4], minU, maxV));
+        csr.add(new CRS_Simple_Vertex(verts[5], maxU, maxV));
         break;
       case EAST:
         csr.add(new CRS_Normal(verts[1], verts[5], verts[6]));
@@ -217,16 +217,16 @@ public class CacheRenderer {
       case UP:
         csr.add(new CRS_Normal(verts[6], verts[2], verts[3]));
         csr.add(new CRS_Vertex(verts[6], maxU, maxV, 1, color_TL));
-        csr.add(new CRS_Vertex(verts[2], maxU, minV, 1, color_TL));
-        csr.add(new CRS_Vertex(verts[3], minU, minV, 1, color_TL));
-        csr.add(new CRS_Vertex(verts[7], minU, maxV, 1, color_TL));
+        csr.add(new CRS_Simple_Vertex(verts[2], maxU, minV));
+        csr.add(new CRS_Simple_Vertex(verts[3], minU, minV));
+        csr.add(new CRS_Simple_Vertex(verts[7], minU, maxV));
         break;
       case DOWN:
         csr.add(new CRS_Normal(verts[0], verts[1], verts[5]));
         csr.add(new CRS_Vertex(verts[0], minU, minV, 1, color_BL));
-        csr.add(new CRS_Vertex(verts[1], maxU, minV, 1, color_BL));
-        csr.add(new CRS_Vertex(verts[5], maxU, maxV, 1, color_BL));
-        csr.add(new CRS_Vertex(verts[4], minU, maxV, 1, color_BL));
+        csr.add(new CRS_Simple_Vertex(verts[1], maxU, minV));
+        csr.add(new CRS_Simple_Vertex(verts[5], maxU, maxV));
+        csr.add(new CRS_Simple_Vertex(verts[4], minU, maxV));
         break;
       case EAST:
         csr.add(new CRS_Normal(verts[5], verts[1], verts[2]));
@@ -402,16 +402,16 @@ public class CacheRenderer {
   // classes
   /////////////////////////////////////////////////////////////////////
 
-  private static class CRS_start implements CachableRenderStatement {
+  private static final class CRS_start implements CachableRenderStatement {
     @Override
-    public void execute(RenderingContext renderingContext) {
+    public final void execute(RenderingContext renderingContext) {
       GL11.glPushAttrib(GL11.GL_ALL_ATTRIB_BITS);
       GL11.glShadeModel(GL11.GL_SMOOTH);
       GL11.glBegin(GL11.GL_QUADS);
     }
 
     @Override
-    public void execute_tesselated(RenderingContext renderingContext) {
+    public final void execute_tesselated(RenderingContext renderingContext) {
     }
 
     @Override
@@ -421,9 +421,9 @@ public class CacheRenderer {
 
   }
 
-  private static class CRS_end implements CachableRenderStatement {
+  private static final class CRS_end implements CachableRenderStatement {
     @Override
-    public void execute(RenderingContext renderingContext) {
+    public final void execute(RenderingContext renderingContext) {
       GL11.glEnd();
       if (Minecraft.isAmbientOcclusionEnabled()) {
         GL11.glShadeModel(GL11.GL_SMOOTH);
@@ -434,7 +434,7 @@ public class CacheRenderer {
     }
 
     @Override
-    public void execute_tesselated(RenderingContext renderingContext) {
+    public final void execute_tesselated(RenderingContext renderingContext) {
     }
 
     @Override
@@ -444,7 +444,7 @@ public class CacheRenderer {
 
   }
 
-  private static class CRS_Lightmap implements CachableRenderStatement {
+  private static final class CRS_Lightmap implements CachableRenderStatement {
     private final int normal;
 
     public CRS_Lightmap(ForgeDirection normal) {
@@ -452,7 +452,7 @@ public class CacheRenderer {
     }
 
     @Override
-    public void execute(RenderingContext renderingContext) {
+    public final void execute(RenderingContext renderingContext) {
       if (renderingContext.hasLight) {
         OpenGlHelper.setLightmapTextureCoords(OpenGlHelper.lightmapTexUnit, renderingContext.blockLight[normal],
             renderingContext.skyLight[normal]);
@@ -460,7 +460,7 @@ public class CacheRenderer {
     }
 
     @Override
-    public void execute_tesselated(RenderingContext renderingContext) {
+    public final void execute_tesselated(RenderingContext renderingContext) {
       if (renderingContext.hasLight) {
         renderingContext.tess.setBrightness(renderingContext.mixedLight[normal]);
       }
@@ -473,7 +473,7 @@ public class CacheRenderer {
 
   }
 
-  private static class CRS_Light implements CachableRenderStatement {
+  private static final class CRS_Light implements CachableRenderStatement {
     private final int mixedBrightness;
     private final float u, v;
 
@@ -484,14 +484,14 @@ public class CacheRenderer {
     }
 
     @Override
-    public void execute(RenderingContext renderingContext) {
+    public final void execute(RenderingContext renderingContext) {
       if (renderingContext.hasLight) {
         OpenGlHelper.setLightmapTextureCoords(OpenGlHelper.lightmapTexUnit, u, v);
       }
     }
 
     @Override
-    public void execute_tesselated(RenderingContext renderingContext) {
+    public final void execute_tesselated(RenderingContext renderingContext) {
       if (renderingContext.hasLight) {
         renderingContext.tess.setBrightness(mixedBrightness);
       }
@@ -504,7 +504,7 @@ public class CacheRenderer {
 
   }
 
-  private static class CRS_Normal implements CachableRenderStatement {
+  private static final class CRS_Normal implements CachableRenderStatement {
     private final double x, y, z;
     private static final Vector3d T1 = new Vector3d();
     private static final Vector3d T2 = new Vector3d();
@@ -523,12 +523,12 @@ public class CacheRenderer {
     }
 
     @Override
-    public void execute(RenderingContext renderingContext) {
+    public final void execute(RenderingContext renderingContext) {
       GL11.glNormal3d(x, y, z);
     }
 
     @Override
-    public void execute_tesselated(RenderingContext renderingContext) {
+    public final void execute_tesselated(RenderingContext renderingContext) {
       renderingContext.tess.setNormal((float) x, (float) y, (float) z);
     }
 
@@ -539,7 +539,7 @@ public class CacheRenderer {
 
   }
 
-  private static class CRS_Vertex implements CachableRenderStatement {
+  private static final class CRS_Vertex implements CachableRenderStatement {
     private final double u, v, w, x, y, z;
     private final int color;
 
@@ -554,14 +554,14 @@ public class CacheRenderer {
     }
 
     @Override
-    public void execute(RenderingContext renderingContext) {
+    public final void execute(RenderingContext renderingContext) {
       GL11.glColor4ub((byte) color, (byte) color, (byte) color, (byte) 255);
       GL11.glTexCoord4d(u, v, 0d, w);
       GL11.glVertex3d(x + renderingContext.xOffset, y + renderingContext.yOffset, z + renderingContext.zOffset);
     }
 
     @Override
-    public void execute_tesselated(RenderingContext renderingContext) {
+    public final void execute_tesselated(RenderingContext renderingContext) {
       renderingContext.tess.setColorRGBA(color, color, color, 255);
       renderingContext.tess.addVertexWithUV(x, y, z, u / w, v / w);
     }
@@ -570,6 +570,35 @@ public class CacheRenderer {
     public String toString() {
       return "CRS_Vertex [u=" + u + ", v=" + v + ", w=" + w + ", x=" + x + ", y=" + y + ", z=" + z + ", color="
           + (color & 0xff) + "]";
+    }
+
+  }
+
+  private static final class CRS_Simple_Vertex implements CachableRenderStatement {
+    private final double u, v, x, y, z;
+
+    public CRS_Simple_Vertex(Vector3d vec, float u, float v) {
+      this.u = u;
+      this.v = v;
+      this.x = vec.x;
+      this.y = vec.y;
+      this.z = vec.z;
+    }
+
+    @Override
+    public final void execute(RenderingContext renderingContext) {
+      GL11.glTexCoord4d(u, v, 0d, 1d);
+      GL11.glVertex3d(x + renderingContext.xOffset, y + renderingContext.yOffset, z + renderingContext.zOffset);
+    }
+
+    @Override
+    public final void execute_tesselated(RenderingContext renderingContext) {
+      renderingContext.tess.addVertexWithUV(x, y, z, u, v);
+    }
+
+    @Override
+    public String toString() {
+      return "CRS_Vertex [u=" + u + ", v=" + v + ", x=" + x + ", y=" + y + ", z=" + z + "]";
     }
 
   }

@@ -47,6 +47,10 @@ public class RenderingContext {
   }
 
   public RenderingContext(IBlockAccess world, BlockCoord bc, Tessellator tess) {
+    this(world, bc, tess, !derpedTess);
+  }
+
+  public RenderingContext(IBlockAccess world, BlockCoord bc, Tessellator tess, boolean allow_GL) {
     if (world != null && bc != null) {
       hasLight = true;
       for (ForgeDirection dir : ForgeDirection.VALID_DIRECTIONS) {
@@ -65,12 +69,18 @@ public class RenderingContext {
     }
 
     this.tess = tess;
-    setupTessellatorFields();
-    xOffset = getDouble(xOffset_field);
-    yOffset = getDouble(yOffset_field);
-    zOffset = getDouble(zOffset_field);
-    vertexCount = getInt(vertexCount_field);
-    tessIsDrawing = getBoolean(tessIsDrawing_field);
+    if (allow_GL) {
+      setupTessellatorFields();
+      xOffset = getDouble(xOffset_field);
+      yOffset = getDouble(yOffset_field);
+      zOffset = getDouble(zOffset_field);
+      vertexCount = getInt(vertexCount_field);
+      tessIsDrawing = getBoolean(tessIsDrawing_field);
+    } else {
+      xOffset = yOffset = zOffset = 0;
+      vertexCount = 0;
+      tessIsDrawing = true;
+    }
   }
 
   private double getDouble(Field field) {

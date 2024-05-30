@@ -35,4 +35,6 @@
  */
 dependencies {
 	compile("com.enderio.core:EnderCore:1.7.10-0.2.0.35_beta:dev") { transitive = false }
+	compileOnlyApi("com.github.GTNewHorizons:Angelica:1.0.0-alpha50:api")
+	// compile("com.github.GTNewHorizons:Angelica:1.0.0-alpha50:dev")
 }

@@ -4,6 +4,7 @@ import java.io.File;
 
 import cpw.mods.fml.client.event.ConfigChangedEvent.OnConfigChangedEvent;
 import cpw.mods.fml.common.FMLCommonHandler;
+import cpw.mods.fml.common.Loader;
 import cpw.mods.fml.common.eventhandler.SubscribeEvent;
 import info.loenwind.gravitytorch.GravityTorch;
 import net.minecraftforge.common.config.Configuration;
@@ -48,6 +49,13 @@ public class Config {
         "Enable direct OpenGL drawing for the falling block? Disable if the falling block entity is invisible.");
     directDrawingHand = configuration.getBoolean("directDrawingHand", Configuration.CATEGORY_GENERAL, directDrawingHand,
         "Enable direct OpenGL drawing for the item in the hand? Disable if the item is invisible.");
+
+    if (Loader.isModLoaded("angelica")) {
+      if (directDrawingWorld) {
+        GravityTorch.LOG.info("Angelica is present, forcing directDrawingWorld to off");
+        directDrawingWorld = false;
+      }
+    }
 
     if (configuration.hasChanged()) {
       configuration.save();
