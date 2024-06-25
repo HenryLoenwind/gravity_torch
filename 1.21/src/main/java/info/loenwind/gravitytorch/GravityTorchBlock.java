@@ -1,4 +1,4 @@
-package com.example.examplemod;
+package info.loenwind.gravitytorch;
 
 import java.util.function.BiConsumer;
 import java.util.function.ToIntFunction;
@@ -48,63 +48,58 @@ import net.minecraft.world.phys.BlockHitResult;
 import net.minecraft.world.phys.shapes.CollisionContext;
 import net.minecraft.world.phys.shapes.VoxelShape;
 
-public class GravityTorchBlock extends TorchBlock implements SimpleWaterloggedBlock, Fallable {
+public final class GravityTorchBlock extends TorchBlock implements SimpleWaterloggedBlock, Fallable {
 
 	private static final float px = 1f / 16f;
 	private static final double diameter = 4.0;
 	private static final double y_offset = 2.0;
 	private static final double height = 10.0 + y_offset;
-	private static final VoxelShape AABB = box(
-			8.0 - diameter / 2.0, 0.0,    8.0 - diameter / 2.0,
+	private static final VoxelShape AABB = box( //
+			8.0 - diameter / 2.0, 0.0, 8.0 - diameter / 2.0, //
 			8.0 + diameter / 2.0, height, 8.0 + diameter / 2.0);
 
+	private static final MapCodec<GravityTorchBlock> CODEC = RecordCodecBuilder.mapCodec(
+			instance -> instance.group(PARTICLE_OPTIONS_FIELD.forGetter(block -> block.flameParticle), propertiesCodec()).apply(instance, GravityTorchBlock::new));
 
-	public static final MapCodec<GravityTorchBlock> CODEC = RecordCodecBuilder.mapCodec(
-			instance -> instance.group(PARTICLE_OPTIONS_FIELD.forGetter(block -> block.flameParticle), propertiesCodec())
-			.apply(instance, GravityTorchBlock::new)
-			);
-
-	public static final BooleanProperty LIT = AbstractCandleBlock.LIT;
-	public static final BooleanProperty WATERLOGGED = BlockStateProperties.WATERLOGGED;
-	public static final ToIntFunction<BlockState> LIGHT_EMISSION = blockstate -> blockstate.getValue(LIT) ? 14 : 0;
-
+	private static final BooleanProperty LIT = AbstractCandleBlock.LIT;
+	private static final BooleanProperty WATERLOGGED = BlockStateProperties.WATERLOGGED;
+	// Need to check waterlogged because this is what we get after falling into
+	// water. We correct this instantly in onLand(), but the FallingEntity gets in
+	// one chunk render before that, which means there would be a big blink...
+	private static final ToIntFunction<BlockState> LIGHT_EMISSION = blockstate -> blockstate.getValue(LIT) && !blockstate.getValue(WATERLOGGED) ? 14 : 0;
 
 	public static GravityTorchBlock create() {
-		return new GravityTorchBlock(
-				ParticleTypes.FLAME,
-				BlockBehaviour.Properties.of()
-				.noCollission()
-				.instabreak()
-				.lightLevel(LIGHT_EMISSION)
-				.sound(SoundType.STONE)
-				.pushReaction(PushReaction.DESTROY)
-				);
+		return new GravityTorchBlock(ParticleTypes.FLAME,
+				BlockBehaviour.Properties.of().noCollission().instabreak().lightLevel(LIGHT_EMISSION).sound(SoundType.STONE).pushReaction(PushReaction.DESTROY));
 	}
 
-	public GravityTorchBlock(SimpleParticleType particle, BlockBehaviour.Properties bbp) {
+	public GravityTorchBlock(final SimpleParticleType particle, final BlockBehaviour.Properties bbp) {
 		super(particle, bbp);
 		registerDefaultState(stateDefinition.any().setValue(LIT, Boolean.TRUE).setValue(WATERLOGGED, Boolean.FALSE));
 	}
 
 	@Override
-	public BlockState getStateForPlacement(BlockPlaceContext pContext) {
-		FluidState fluidstate = pContext.getLevel().getFluidState(pContext.getClickedPos());
-		boolean flag = fluidstate.getType() == Fluids.WATER;
+	public BlockState getStateForPlacement(final BlockPlaceContext pContext) {
+		final FluidState fluidstate = pContext.getLevel().getFluidState(pContext.getClickedPos());
+		final boolean flag = fluidstate.getType() == Fluids.WATER;
 		return super.getStateForPlacement(pContext).setValue(WATERLOGGED, flag).setValue(LIT, !flag);
 	}
 
 	@Override
-	protected void onPlace(BlockState pState, Level pLevel, BlockPos pPos, BlockState pOldState, boolean pIsMoving) {
-		pLevel.scheduleTick(pPos, this, this.getDelayAfterPlace());
+	protected void onPlace(final BlockState pState, final Level pLevel, final BlockPos pPos, final BlockState pOldState, final boolean pIsMoving) {
+		// schedule check for falling. Not really needed as we cannot be placed in a
+		// position where we don't sit on something.
+		pLevel.scheduleTick(pPos, this, getDelayAfterPlace());
 	}
 
 	@Override
-	protected BlockState updateShape(
-			BlockState pState, Direction pDirection, BlockState pNeighborState, LevelAccessor pLevel, BlockPos pPos, BlockPos pNeighborPos) {
+	protected BlockState updateShape(final BlockState pState, final Direction pDirection, final BlockState pNeighborState, final LevelAccessor pLevel,
+			final BlockPos pPos, final BlockPos pNeighborPos) {
 		if (pState.getValue(WATERLOGGED)) {
 			pLevel.scheduleTick(pPos, Fluids.WATER, Fluids.WATER.getTickDelay(pLevel));
 		}
-		// don't super() here, the torch code would break us. Instead schedule a tick which will handle the falling if needed 
+		// don't super() here, the torch code would break us. Instead schedule a tick
+		// which will handle the falling if needed
 		pLevel.scheduleTick(pPos, this, getDelayAfterPlace());
 		return pState;
 	}
@@ -112,44 +107,44 @@ public class GravityTorchBlock extends TorchBlock implements SimpleWaterloggedBl
 	/**
 	 * The delay between placement or neighbour changes and us trying to fall
 	 */
-	protected int getDelayAfterPlace() {
+	private int getDelayAfterPlace() {
 		return 2;
 	}
 
 	@Override
-	protected void tick(BlockState pState, ServerLevel pLevel, BlockPos pPos, RandomSource pRandom) {
+	protected void tick(final BlockState pState, final ServerLevel pLevel, final BlockPos pPos, final RandomSource pRandom) {
 		if (!canSurvive(pState, pLevel, pPos) && pPos.getY() >= pLevel.getMinBuildHeight()) {
 			FallingBlockEntity.fall(pLevel, pPos, pState);
 		}
 	}
 
 	@Override
-	public void onLand(Level pLevel, BlockPos pPos, BlockState pState, BlockState pReplaceableState, FallingBlockEntity pFallingBlock) {
+	public void onLand(final Level pLevel, final BlockPos pPos, final BlockState pState, final BlockState pReplaceableState,
+			final FallingBlockEntity pFallingBlock) {
 		if (pState.getValue(WATERLOGGED) && pState.getValue(LIT)) {
 			extinguish(null, pState, pLevel, pPos);
 		}
 	}
-	
+
 	@Override
-	protected FluidState getFluidState(BlockState pState) {
+	protected FluidState getFluidState(final BlockState pState) {
 		return pState.getValue(WATERLOGGED) ? Fluids.WATER.getSource(false) : super.getFluidState(pState);
 	}
 
 	@Override
-	protected void createBlockStateDefinition(StateDefinition.Builder<Block, BlockState> pBuilder) {
+	protected void createBlockStateDefinition(final StateDefinition.Builder<Block, BlockState> pBuilder) {
 		pBuilder.add(LIT, WATERLOGGED);
 	}
 
 	@Override
-	public boolean placeLiquid(LevelAccessor pLevel, BlockPos pPos, BlockState pState, FluidState pFluidState) {
+	public boolean placeLiquid(final LevelAccessor pLevel, final BlockPos pPos, final BlockState pState, final FluidState pFluidState) {
 		if (!pState.getValue(WATERLOGGED) && pFluidState.getType() == Fluids.WATER) {
-			BlockState blockstate = pState.setValue(WATERLOGGED, true);
+			final BlockState blockstate = pState.setValue(WATERLOGGED, true);
 			if (pState.getValue(LIT)) {
 				extinguish(null, blockstate, pLevel, pPos);
 			} else {
 				pLevel.setBlock(pPos, blockstate, 3);
 			}
-
 			pLevel.scheduleTick(pPos, pFluidState.getType(), pFluidState.getType().getTickDelay(pLevel));
 			return true;
 		} else {
@@ -158,52 +153,43 @@ public class GravityTorchBlock extends TorchBlock implements SimpleWaterloggedBl
 	}
 
 	@Override
-	protected ItemInteractionResult useItemOn(
-			ItemStack pStack, BlockState blockstate, Level level, BlockPos blockpos, Player player, InteractionHand pHand, BlockHitResult pHitResult) {
-		if (pStack.getItem() == Items.FLINT_AND_STEEL && player.getAbilities().mayBuild && !blockstate.getValue(LIT) && !blockstate.getValue(WATERLOGGED)) {
+	protected ItemInteractionResult useItemOn(final ItemStack pStack, final BlockState blockstate, final Level level, final BlockPos blockpos,
+			final Player player, final InteractionHand pHand, final BlockHitResult pHitResult) {
+		if (pStack.getItem() == Items.FLINT_AND_STEEL && player.getAbilities().mayBuild && canBeLit(blockstate)) {
 			level.playSound(player, blockpos, SoundEvents.FLINTANDSTEEL_USE, SoundSource.BLOCKS, 1.0F, level.getRandom().nextFloat() * 0.4F + 0.8F);
-			level.setBlock(blockpos, blockstate.setValue(BlockStateProperties.LIT, Boolean.valueOf(true)), 11);
+			level.setBlock(blockpos, blockstate.setValue(BlockStateProperties.LIT, true), 11);
 			level.gameEvent(player, GameEvent.BLOCK_CHANGE, blockpos);
 			if (player != null) {
 				pStack.hurtAndBreak(1, player, LivingEntity.getSlotForHand(pHand));
 			}
-
 			return ItemInteractionResult.sidedSuccess(level.isClientSide);
 		} else {
 			return super.useItemOn(pStack, blockstate, level, blockpos, player, pHand, pHitResult);
 		}
 	}
 
-	public static boolean isLit(BlockState pState) {
-		return pState.hasProperty(LIT) && pState.getValue(LIT);
-	}
-
-	protected boolean canBeLit(BlockState pState) {
+	protected boolean canBeLit(final BlockState pState) {
 		return !pState.getValue(WATERLOGGED) && !pState.getValue(LIT);
 	}
 
 	@Override
-	protected void onProjectileHit(Level pLevel, BlockState pState, BlockHitResult pHit, Projectile pProjectile) {
+	protected void onProjectileHit(final Level pLevel, final BlockState pState, final BlockHitResult pHit, final Projectile pProjectile) {
 		if (!pLevel.isClientSide && pProjectile.isOnFire() && canBeLit(pState)) {
-			setLit(pLevel, pState, pHit.getBlockPos(), true);
+			pLevel.setBlock(pHit.getBlockPos(), pState.setValue(LIT, true), 11);
 		}
-	}
-
-	private static void setLit(LevelAccessor pLevel, BlockState pState, BlockPos pPos, boolean pLit) {
-		pLevel.setBlock(pPos, pState.setValue(LIT, pLit), 11);
 	}
 
 	@Override
-	protected void onExplosionHit(BlockState pState, Level pLevel, BlockPos pPos, Explosion pExplosion, BiConsumer<ItemStack, BlockPos> pDropConsumer) {
+	protected void onExplosionHit(final BlockState pState, final Level pLevel, final BlockPos pPos, final Explosion pExplosion,
+			final BiConsumer<ItemStack, BlockPos> pDropConsumer) {
 		if (pExplosion.canTriggerBlocks() && pState.getValue(LIT)) {
 			extinguish(null, pState, pLevel, pPos);
 		}
-
 		super.onExplosionHit(pState, pLevel, pPos, pExplosion, pDropConsumer);
 	}
 
-	public static void extinguish(@Nullable Player pPlayer, BlockState pState, LevelAccessor pLevel, BlockPos pPos) {
-		setLit(pLevel, pState, pPos, false);
+	public static void extinguish(@Nullable final Player pPlayer, final BlockState pState, final LevelAccessor pLevel, final BlockPos pPos) {
+		pLevel.setBlock(pPos, pState.setValue(LIT, false), 11);
 		pLevel.playSound(null, pPos, SoundEvents.CANDLE_EXTINGUISH, SoundSource.BLOCKS, 1.0F, 1.0F);
 		pLevel.gameEvent(pPlayer, GameEvent.BLOCK_CHANGE, pPos);
 	}
@@ -214,17 +200,17 @@ public class GravityTorchBlock extends TorchBlock implements SimpleWaterloggedBl
 	}
 
 	@Override
-	protected VoxelShape getShape(BlockState p_304673_, BlockGetter p_304919_, BlockPos p_304930_, CollisionContext p_304757_) {
+	protected VoxelShape getShape(final BlockState p_304673_, final BlockGetter p_304919_, final BlockPos p_304930_, final CollisionContext p_304757_) {
 		return AABB;
 	}
 
 	@Override
-	public void animateTick(BlockState pState, Level pLevel, BlockPos pPos, RandomSource pRandom) {
+	public void animateTick(final BlockState pState, final Level pLevel, final BlockPos pPos, final RandomSource pRandom) {
 		if (pState.getValue(LIT)) {
-			double d0 = (double)pPos.getX() + 0.5;
-			double d1 = (double)pPos.getY() + 0.7 + y_offset * px;
-			double d2 = (double)pPos.getZ() + 0.5;
-	
+			final double d0 = pPos.getX() + 0.5;
+			final double d1 = pPos.getY() + 0.7 + y_offset * px;
+			final double d2 = pPos.getZ() + 0.5;
+
 			pLevel.addParticle(ParticleTypes.SMOKE, d0, d1, d2, 0.0, 0.0, 0.0);
 			pLevel.addParticle(flameParticle, d0, d1, d2, 0.0, 0.0, 0.0);
 		}
