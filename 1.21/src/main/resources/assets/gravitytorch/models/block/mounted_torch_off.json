@@ -1,0 +1,7 @@
+{
+  "parent": "gravitytorch:block/mounted_torch",
+  "textures": {
+	"particle": "gravitytorch:block/torch_off",
+    "torch": "gravitytorch:block/torch_off"
+  }
+}

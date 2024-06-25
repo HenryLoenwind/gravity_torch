@@ -1,0 +1,10 @@
+{
+  "variants": {
+    "lit=false": {
+      "model": "gravitytorch:block/mounted_torch_off"
+    },
+    "lit=true": {
+      "model": "gravitytorch:block/mounted_torch"
+    }
+  }
+}
