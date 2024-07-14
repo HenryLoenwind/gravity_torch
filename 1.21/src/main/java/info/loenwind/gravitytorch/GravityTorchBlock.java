@@ -1,5 +1,7 @@
 package info.loenwind.gravitytorch;
 
+import static net.neoforged.neoforge.common.ItemAbilities.FIRESTARTER_LIGHT;
+
 import java.util.function.BiConsumer;
 import java.util.function.ToIntFunction;
 
@@ -16,15 +18,12 @@ import net.minecraft.server.level.ServerLevel;
 import net.minecraft.sounds.SoundEvents;
 import net.minecraft.sounds.SoundSource;
 import net.minecraft.util.RandomSource;
-import net.minecraft.world.InteractionHand;
-import net.minecraft.world.ItemInteractionResult;
-import net.minecraft.world.entity.LivingEntity;
 import net.minecraft.world.entity.item.FallingBlockEntity;
 import net.minecraft.world.entity.player.Player;
 import net.minecraft.world.entity.projectile.Projectile;
 import net.minecraft.world.item.ItemStack;
-import net.minecraft.world.item.Items;
 import net.minecraft.world.item.context.BlockPlaceContext;
+import net.minecraft.world.item.context.UseOnContext;
 import net.minecraft.world.level.BlockGetter;
 import net.minecraft.world.level.Explosion;
 import net.minecraft.world.level.Level;
@@ -47,6 +46,7 @@ import net.minecraft.world.level.material.PushReaction;
 import net.minecraft.world.phys.BlockHitResult;
 import net.minecraft.world.phys.shapes.CollisionContext;
 import net.minecraft.world.phys.shapes.VoxelShape;
+import net.neoforged.neoforge.common.ItemAbility;
 
 public final class GravityTorchBlock extends TorchBlock implements SimpleWaterloggedBlock, Fallable {
 
@@ -153,19 +153,9 @@ public final class GravityTorchBlock extends TorchBlock implements SimpleWaterlo
 	}
 
 	@Override
-	protected ItemInteractionResult useItemOn(final ItemStack pStack, final BlockState blockstate, final Level level, final BlockPos blockpos,
-			final Player player, final InteractionHand pHand, final BlockHitResult pHitResult) {
-		if (pStack.getItem() == Items.FLINT_AND_STEEL && player.getAbilities().mayBuild && canBeLit(blockstate)) {
-			level.playSound(player, blockpos, SoundEvents.FLINTANDSTEEL_USE, SoundSource.BLOCKS, 1.0F, level.getRandom().nextFloat() * 0.4F + 0.8F);
-			level.setBlock(blockpos, blockstate.setValue(BlockStateProperties.LIT, true), 11);
-			level.gameEvent(player, GameEvent.BLOCK_CHANGE, blockpos);
-			if (player != null) {
-				pStack.hurtAndBreak(1, player, LivingEntity.getSlotForHand(pHand));
-			}
-			return ItemInteractionResult.sidedSuccess(level.isClientSide);
-		} else {
-			return super.useItemOn(pStack, blockstate, level, blockpos, player, pHand, pHitResult);
-		}
+	public @org.jetbrains.annotations.Nullable BlockState getToolModifiedState(final BlockState blockstate, final UseOnContext context,
+			final ItemAbility itemAbility, final boolean simulate) {
+		return itemAbility == FIRESTARTER_LIGHT && canBeLit(blockstate) ? blockstate.setValue(BlockStateProperties.LIT, true) : null;
 	}
 
 	protected boolean canBeLit(final BlockState pState) {
