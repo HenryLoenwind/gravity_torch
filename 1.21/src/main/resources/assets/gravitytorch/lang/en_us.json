@@ -1,4 +1,5 @@
 {
   "block.gravitytorch.mounted_torch": "Mounted Torch",
-  "item.gravitytorch.mounted_torch": "Mounted Torch"
+  "item.gravitytorch.mounted_torch": "Mounted Torch",
+  "block.gravitytorch.bright_air": "Air"
 }

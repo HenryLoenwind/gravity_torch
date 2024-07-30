@@ -20,6 +20,8 @@ public class GravityTorch {
 	public static final DeferredBlock<Block> DA_BLOCK = BLOCKS.register("mounted_torch", GravityTorchBlock::create);
 	public static final DeferredItem<BlockItem> DA_ITEM = ITEMS.registerSimpleBlockItem("mounted_torch", DA_BLOCK);
 
+	public static final DeferredBlock<Block> BA_BLOCK = BLOCKS.register("bright_air", BrightAirBlock::create);
+
 	public GravityTorch(final IEventBus modEventBus) {
 		BLOCKS.register(modEventBus);
 		ITEMS.register(modEventBus);

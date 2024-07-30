@@ -61,7 +61,7 @@ public final class GravityTorchBlock extends TorchBlock implements SimpleWaterlo
 	private static final MapCodec<GravityTorchBlock> CODEC = RecordCodecBuilder.mapCodec(
 			instance -> instance.group(PARTICLE_OPTIONS_FIELD.forGetter(block -> block.flameParticle), propertiesCodec()).apply(instance, GravityTorchBlock::new));
 
-	private static final BooleanProperty LIT = AbstractCandleBlock.LIT;
+	static final BooleanProperty LIT = AbstractCandleBlock.LIT;
 	private static final BooleanProperty WATERLOGGED = BlockStateProperties.WATERLOGGED;
 	// Need to check waterlogged because this is what we get after falling into
 	// water. We correct this instantly in onLand(), but the FallingEntity gets in
@@ -115,6 +115,9 @@ public final class GravityTorchBlock extends TorchBlock implements SimpleWaterlo
 	protected void tick(final BlockState pState, final ServerLevel pLevel, final BlockPos pPos, final RandomSource pRandom) {
 		if (!canSurvive(pState, pLevel, pPos) && pPos.getY() >= pLevel.getMinBuildHeight()) {
 			FallingBlockEntity.fall(pLevel, pPos, pState);
+			if (pState.getValue(LIT)) {
+				pLevel.setBlock(pPos, GravityTorch.BA_BLOCK.get().defaultBlockState(), UPDATE_ALL_IMMEDIATE);
+			}
 		}
 	}
 
